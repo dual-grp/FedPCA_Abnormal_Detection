@@ -34,14 +34,15 @@ if __name__ == "__main__":
     args = args_parser()
     print("=" * 80)
     print("Summary of training process:")
-    print("Algorithm: {}".format(args.algorithm))
+    print("Algorithm: Fed PCA {}".format(args.algorithm))
     print("Batch size: {}".format(args.batch_size))
     print("Learing rate       : {}".format(args.learning_rate))
     print("Average Moving       : {}".format(args.ro))
     print("Subset of users      : {}".format(args.subusers))
     print("Number of global rounds       : {}".format(args.num_global_iters))
     print("Number of local rounds       : {}".format(args.local_epochs))
-    print("Dataset       : {}".format(args.dataset))
+    print("Dataset       : KDD")
+    # print("Dataset       : {}".format(args.dataset))
     print("=" * 80)
 
     if(args.commet):

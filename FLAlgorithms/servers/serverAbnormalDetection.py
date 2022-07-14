@@ -97,7 +97,7 @@ class AbnormalDetection(Server2):
         print(f"directory: {directory}")
         data_path = os.path.join(directory, "abnormal_detection_data/train")
         print(data_path)
-        file_name = f"kdd_80000.csv"
+        file_name = f"kdd_80000_34_fea.csv"
         client_path = os.path.join(data_path, file_name)
         print(client_path)
 
