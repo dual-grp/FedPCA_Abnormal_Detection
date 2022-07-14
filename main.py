@@ -25,7 +25,8 @@ def main(experiment, dataset, algorithm, batch_size, learning_rate, ro, num_glob
     
     # Get device status: Check GPU or CPU
     device = torch.device("cuda:{}".format(gpu) if torch.cuda.is_available() and gpu != -1 else "cpu")
-    data = read_data(dataset) , dataset
+    # data = read_data(dataset) , dataset
+    data = "KDD"
         #def __init__(self, experiment, device, dataset, learning_rate, L_k, num_glob_iters, local_epochs, num_users, dim, time):
     server = AbnormalDetection(experiment, device, data, learning_rate, ro, num_glob_iters, local_epochs, numusers, dim, times)
     server.train()
