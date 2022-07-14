@@ -3,10 +3,13 @@ import os
 import json
 from FLAlgorithms.users.userbase import User
 import copy
-# Implementation for FedAvg clients
+
+'''Implementation for FedPCA clients''' 
+
 Euclidean_Space = False
 class UserADMM2():
-    def __init__(self, device, id, train_data, test_data, commonPCA, learning_rate, ro, local_epochs, dim):
+    # def __init__(self, device, id, train_data, test_data, commonPCA, learning_rate, ro, local_epochs, dim):
+    def __init__(self, device, id, train_data, commonPCA, learning_rate, ro, local_epochs, dim):
         self.localPCA   = copy.deepcopy(commonPCA) # local U
         self.localZ     = copy.deepcopy(commonPCA)
         self.localY     = copy.deepcopy(commonPCA)
@@ -15,13 +18,13 @@ class UserADMM2():
         self.device = device
         self.id = id
         self.train_samples = len(train_data)
-        self.test_samples = len(test_data)
+        # self.test_samples = len(test_data)
         self.learning_rate = learning_rate
         self.local_epochs = local_epochs
         self.dim = dim
         self.train_data = train_data.T
         # self.train_data = train_data
-        self.test_data = test_data.T
+        # self.test_data = test_data.T
         self.localPCA.requires_grad_(True)
 
     def set_commonPCA(self, commonPCA):

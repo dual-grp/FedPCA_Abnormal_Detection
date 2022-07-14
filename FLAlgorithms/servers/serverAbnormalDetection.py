@@ -9,7 +9,8 @@ import numpy as np
 import pandas as pd
 import time
 from sklearn.preprocessing import StandardScaler
-# Implementation for FedAvg Server
+
+''' Implementation for FedPCA Server'''
 
 class AbnormalDetection(Server2):
     def __init__(self, experiment, device, dataset, learning_rate, ro, num_glob_iters, local_epochs, num_users, dim, time):
@@ -18,19 +19,15 @@ class AbnormalDetection(Server2):
         # Initialize data for all  users
         self.K = 0
         self.experiment = experiment
-        #oriDim = getDimention(0,dataset[0], dataset[1])
-        total_users = len(dataset[0][0])
-        print("total users: ", total_users)
         dataX = self.get_data_kdd_80000()
         self.num_clients = 20
         factor = 80000/self.num_clients
         self.learning_rate = learning_rate
         self.user_fraction = num_users
+        total_users = self.num_clients
+        print("total users: ", total_users)
         for i in range(self.num_clients):            
-            id, train , test = read_user_data(i, dataset[0], dataset[1])
-            #train = train# - torch.mean(train, 1)).T
-            #test = test #- torch.mean(test, 1)).T
-            # train = self.get_data_kdd(i)
+            id = i
             train = self.get_client_data(dataX, factor=factor, i=i)
             train = torch.Tensor(train)
             if(i == 0):
@@ -46,12 +43,12 @@ class AbnormalDetection(Server2):
 
             #user = UserADMM(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             # user = UserADMM2(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
-            user = UserADMM2(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
+            user = UserADMM2(device, id, train, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             self.users.append(user)
             self.total_train_samples += user.train_samples
             
         print("Number of users / total users:", int(num_users*total_users), " / " ,total_users)
-        print("Finished creating FedAvg server.")
+        print("Finished creating FedPCA server.")
 
     '''
     Get data from csv file
@@ -108,6 +105,7 @@ class AbnormalDetection(Server2):
         client_train = pd.read_csv(client_path)
 
         return client_train
+
     '''
     Preprocessing data step
     '''
