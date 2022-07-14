@@ -1,3 +1,4 @@
 data/
 *.npy
 desktop.ini
+*.pyc
