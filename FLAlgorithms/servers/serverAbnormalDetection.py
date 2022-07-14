@@ -7,6 +7,7 @@ from FLAlgorithms.servers.serverbase2 import Server2
 from utils.model_utils import read_data, read_user_data
 import numpy as np
 import pandas as pd
+import time
 from sklearn.preprocessing import StandardScaler
 # Implementation for FedAvg Server
 
@@ -23,6 +24,8 @@ class AbnormalDetection(Server2):
         dataX = self.get_data_kdd_80000()
         self.num_clients = 20
         factor = 80000/self.num_clients
+        self.learning_rate = learning_rate
+        self.user_fraction = num_users
         for i in range(self.num_clients):            
             id, train , test = read_user_data(i, dataset[0], dataset[1])
             #train = train# - torch.mean(train, 1)).T
@@ -42,11 +45,12 @@ class AbnormalDetection(Server2):
                 check = torch.matmul(V.T,V)
 
             #user = UserADMM(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
+            # user = UserADMM2(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             user = UserADMM2(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             self.users.append(user)
             self.total_train_samples += user.train_samples
             
-        print("Number of users / total users:",num_users, " / " ,total_users)
+        print("Number of users / total users:", int(num_users*total_users), " / " ,total_users)
         print("Finished creating FedAvg server.")
 
     '''
@@ -127,10 +131,14 @@ class AbnormalDetection(Server2):
         return client_data
     
     def train(self):
+        current_loss = 0
+        prev_loss = 0
+        losses_to_file = []
         self.selected_users = self.select_users(1000,1)
-        print("Selected users: ")
+        print("All user in the network: ")
         for user in self.selected_users:
             print("user_id: ", user.id)
+        start_time = time.time()
         for glob_iter in range(self.num_glob_iters):
             if(self.experiment):
                 self.experiment.set_epoch( glob_iter + 1)
@@ -139,19 +147,30 @@ class AbnormalDetection(Server2):
             self.send_pca()
 
             # Evaluate model each interation
-            self.evaluate()
+            prev_loss = current_loss
+            current_loss = self.evaluate()
+            current_loss = current_loss.item()
+            losses_to_file.append(current_loss)
 
-            # self.selected_users = self.select_users(glob_iter,self.num_users)
-            
+            self.selected_users = self.select_users(glob_iter, self.user_fraction)
             # self.users = self.selected_users 
+
             #NOTE: this is required for the ``fork`` method to work
             for user in self.selected_users:
                 user.train(self.local_epochs)
+                print(f" selected user for training: {user.id}")
             # self.users[0].train(self.local_epochs)
             self.aggregate_pca()
+            # Check loss to terminate iterations
+            if abs(prev_loss-current_loss) < 1e-2:
+                break
+        end_time = time.time()
         Z = self.commonPCAz.detach().numpy()
         print(f"Z:{Z}")
-        np.save(f'Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}', Z)
+        losses_to_file = np.array(losses_to_file)
+        np.save(f'Grassman_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}', Z)
+        np.save(f"Grassman_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}", losses_to_file)
+        print(f"training time: {end_time - start_time} seconds")
         print("Completed training!!!")
         # self.save_results()
         # self.save_model()

@@ -73,12 +73,14 @@ class Server2:
 
     def evaluate(self):
         stats_train = self.train_error_and_loss()
+        # print(f"stats_train: {stats_train}")
         train_loss = sum(stats_train[2])/len(self.users)
         self.rs_train_loss.append(train_loss)
         if(self.experiment):
             self.experiment.log_metric("train_loss",train_loss)
         #print("stats_train[1]",stats_train[3][0])
         print("Average Global Trainning Loss: ",train_loss)
+        return train_loss
     
     def save_results(self):
         dir_path = "./results"
