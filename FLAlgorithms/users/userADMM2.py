@@ -6,7 +6,7 @@ import copy
 
 '''Implementation for FedPCA clients''' 
 
-Euclidean_Space = False
+Euclidean_Space = True
 class UserADMM2():
     # def __init__(self, device, id, train_data, test_data, commonPCA, learning_rate, ro, local_epochs, dim):
     def __init__(self, device, id, train_data, commonPCA, learning_rate, ro, local_epochs, dim):

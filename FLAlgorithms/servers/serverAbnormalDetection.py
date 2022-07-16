@@ -4,7 +4,8 @@ import os
 from FLAlgorithms.users.userADMM import UserADMM
 from FLAlgorithms.users.userADMM2 import UserADMM2
 from FLAlgorithms.servers.serverbase2 import Server2
-from utils.model_utils import read_data, read_user_data
+# from utils.model_utils import read_data, read_user_data
+from utils.test_utils import kdd_test
 import numpy as np
 import pandas as pd
 import time
@@ -128,20 +129,29 @@ class AbnormalDetection(Server2):
         client_data = client_data.to_numpy()
         return client_data
     
+
+    '''
+    Training model
+    '''
     def train(self):
         current_loss = 0
         prev_loss = 0
+        acc_score = 0
         losses_to_file = []
+        acc_score_to_file = []
+        acc_score_to_file.append(acc_score) # Initialize accuracy as zero
         self.selected_users = self.select_users(1000,1)
         print("All user in the network: ")
         for user in self.selected_users:
             print("user_id: ", user.id)
+
+        # Start estimating wall-clock time
         start_time = time.time()
         for glob_iter in range(self.num_glob_iters):
             if(self.experiment):
                 self.experiment.set_epoch( glob_iter + 1)
             print("-------------Round number: ",glob_iter, " -------------")
-            #loss_ = 0
+
             self.send_pca()
 
             # Evaluate model each interation
@@ -159,16 +169,46 @@ class AbnormalDetection(Server2):
                 print(f" selected user for training: {user.id}")
             # self.users[0].train(self.local_epochs)
             self.aggregate_pca()
-            # Check loss to terminate iterations
-            if abs(prev_loss-current_loss) < 1e-2:
-                break
+
+            # Check loss to early terminate training process
+            # if abs(prev_loss-current_loss) < 1e-2:
+            #     break
+            
+            # Evaluate the accuracy score
+            # Extract common representation
+            Z = self.commonPCAz.detach().numpy()
+            acc_score = kdd_test(Z, thres_hold=6)
+            acc_score_to_file.append(acc_score)
+
+        # End estimating wall-clock time
         end_time = time.time()
+
+        # Extract common representation
         Z = self.commonPCAz.detach().numpy()
-        print(f"Z:{Z}")
+        
+        # Extract losses to file
         losses_to_file = np.array(losses_to_file)
-        np.save(f'Grassman_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}', Z)
-        np.save(f"Grassman_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}", losses_to_file)
+
+        # Extract accuracy score to file
+        acc_score_to_file = np.array(acc_score_to_file)
+
+        # Save common representation and losses to files
+        # Get data path
+        directory = os.getcwd()
+        data_path = os.path.join(directory, "results/KDD")
+        acc_path = os.path.join(data_path, "KDD_acc")
+        acc_file_name = f'Euclidean_acc_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}'
+        acc_file_path = os.path.join(acc_path, acc_file_name)
+        losses_path = os.path.join(data_path, "KDD_losses")
+        losses_file_name = f"Euclidean_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}"
+        losses_file_path = os.path.join(losses_path, losses_file_name)
+        # Store accuracy score to file
+        np.save(acc_file_path, acc_score_to_file)
+        np.save(losses_file_path, losses_to_file)
+        np.save(f'Euclidean_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}', Z)
+        # np.save(f"Grassman_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}", losses_to_file)
         print(f"training time: {end_time - start_time} seconds")
+        kdd_test(Z, thres_hold=6)
         print("Completed training!!!")
         # self.save_results()
         # self.save_model()
