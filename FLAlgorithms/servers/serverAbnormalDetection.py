@@ -14,10 +14,11 @@ from sklearn.preprocessing import StandardScaler
 ''' Implementation for FedPCA Server'''
 
 class AbnormalDetection(Server2):
-    def __init__(self, experiment, device, dataset, learning_rate, ro, num_glob_iters, local_epochs, num_users, dim, time):
+    def __init__(self, algorithm, experiment, device, dataset, learning_rate, ro, num_glob_iters, local_epochs, num_users, dim, time):
         super().__init__(device, dataset, learning_rate, ro, num_glob_iters, local_epochs, num_users, dim, time)
 
         # Initialize data for all  users
+        self.algorithm = algorithm
         self.K = 0
         self.experiment = experiment
         dataX = self.get_data_kdd_80000()
@@ -44,12 +45,13 @@ class AbnormalDetection(Server2):
 
             #user = UserADMM(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             # user = UserADMM2(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
-            user = UserADMM2(device, id, train, self.commonPCAz, learning_rate, ro, local_epochs, dim)
+            user = UserADMM2(algorithm, device, id, train, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             self.users.append(user)
             self.total_train_samples += user.train_samples
             
         print("Number of users / total users:", int(num_users*total_users), " / " ,total_users)
         print("Finished creating FedPCA server.")
+
 
     '''
     Get data from csv file
@@ -194,18 +196,22 @@ class AbnormalDetection(Server2):
 
         # Save common representation and losses to files
         # Get data path
+        if self.algorithm == "FedPG":
+            space = "Grassman"
+        elif self.algorithm == "FedPE":
+            space = "Euclidean"
         directory = os.getcwd()
         data_path = os.path.join(directory, "results/KDD")
         acc_path = os.path.join(data_path, "KDD_acc")
-        acc_file_name = f'Euclidean_acc_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}'
+        acc_file_name = f'{space}_acc_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}'
         acc_file_path = os.path.join(acc_path, acc_file_name)
         losses_path = os.path.join(data_path, "KDD_losses")
-        losses_file_name = f"Euclidean_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}"
+        losses_file_name = f"{space}_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}"
         losses_file_path = os.path.join(losses_path, losses_file_name)
         # Store accuracy score to file
         np.save(acc_file_path, acc_score_to_file)
         np.save(losses_file_path, losses_to_file)
-        np.save(f'Euclidean_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}', Z)
+        np.save(f'{space}_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}', Z)
         # np.save(f"Grassman_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}", losses_to_file)
         print(f"training time: {end_time - start_time} seconds")
         kdd_test(Z, thres_hold=6)

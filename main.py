@@ -28,14 +28,14 @@ def main(experiment, dataset, algorithm, batch_size, learning_rate, ro, num_glob
     # data = read_data(dataset) , dataset
     data = "KDD"
         #def __init__(self, experiment, device, dataset, learning_rate, L_k, num_glob_iters, local_epochs, num_users, dim, time):
-    server = AbnormalDetection(experiment, device, data, learning_rate, ro, num_glob_iters, local_epochs, numusers, dim, times)
+    server = AbnormalDetection(algorithm, experiment, device, data, learning_rate, ro, num_glob_iters, local_epochs, numusers, dim, times)
     server.train()
 
 if __name__ == "__main__":
     args = args_parser()
     print("=" * 80)
     print("Summary of training process:")
-    print("Algorithm: Fed PCA {}".format(args.algorithm))
+    print("Algorithm: {}".format(args.algorithm))
     print("Batch size: {}".format(args.batch_size))
     print("Learing rate       : {}".format(args.learning_rate))
     print("Average Moving       : {}".format(args.ro))

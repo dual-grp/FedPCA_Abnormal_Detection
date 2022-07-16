@@ -17,7 +17,7 @@ def args_parser():
     parser.add_argument("--local_epochs", type=int, default = 30)
     parser.add_argument("--dim", type=int, default = 3)
     parser.add_argument("--optimizer", type=str, default="SGD")
-    parser.add_argument("--algorithm", type=str, default="ADMM",choices=["ADMM"]) 
+    parser.add_argument("--algorithm", type=str, default="ADMM",choices=["FedPG","FedPE"]) 
     parser.add_argument("--subusers", type = float, default = 1, help="Number of Users per round")
     parser.add_argument("--times", type=int, default=1, help="running time")
     parser.add_argument("--commet", type=int, default=0, help="log data to commet")
