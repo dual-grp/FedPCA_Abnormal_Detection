@@ -13,3 +13,8 @@ Authors: Tung-Anh Nguyen, Jiayu He, Long Tan Le, Nguyen H.Tran
 !python3 main.py --algorithm FedPE --learning_rate 0.0001 --num_global_iters 1000 --dim 9 --subusers 0.1
 !python3 main.py --algorithm FedPG --learning_rate 0.0001 --num_global_iters 1000 --dim 9 --subusers 0.1
 <code></pre>
+
+
+## Dataset:
+
+NSL-KDD
