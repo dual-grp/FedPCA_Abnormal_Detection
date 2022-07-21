@@ -19,11 +19,13 @@ class AbnormalDetection(Server2):
 
         # Initialize data for all  users
         self.algorithm = algorithm
+        self.local_epochs = local_epochs
         self.K = 0
         self.experiment = experiment
         dataX = self.get_data_kdd_80000()
         self.num_clients = 20
-        factor = 80000/self.num_clients
+        # factor = 80000/self.num_clients
+        factor = 67340/self.num_clients
         self.learning_rate = learning_rate
         self.user_fraction = num_users
         total_users = self.num_clients
@@ -100,12 +102,13 @@ class AbnormalDetection(Server2):
         print(f"directory: {directory}")
         data_path = os.path.join(directory, "abnormal_detection_data/train")
         print(data_path)
-        file_name = f"kdd_80000_34_fea.csv"
+        file_name = f"nslkdd_train_normal.csv"
         client_path = os.path.join(data_path, file_name)
         print(client_path)
 
         # Read data from csv file
         client_train = pd.read_csv(client_path)
+        client_train = client_train.drop(['Unnamed: 0', 'outcome'], axis=1)
 
         return client_train
 
@@ -203,16 +206,15 @@ class AbnormalDetection(Server2):
         directory = os.getcwd()
         data_path = os.path.join(directory, "results/KDD")
         acc_path = os.path.join(data_path, "KDD_acc")
-        acc_file_name = f'{space}_acc_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}'
+        acc_file_name = f'{space}_acc_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}'
         acc_file_path = os.path.join(acc_path, acc_file_name)
         losses_path = os.path.join(data_path, "KDD_losses")
-        losses_file_name = f"{space}_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}"
+        losses_file_name = f"{space}_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}"
         losses_file_path = os.path.join(losses_path, losses_file_name)
         # Store accuracy score to file
         np.save(acc_file_path, acc_score_to_file)
         np.save(losses_file_path, losses_to_file)
-        np.save(f'{space}_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}', Z)
-        # np.save(f"Grassman_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}", losses_to_file)
+        np.save(f'{space}_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}', Z)
         print(f"training time: {end_time - start_time} seconds")
         kdd_test(Z, thres_hold=6)
         print("Completed training!!!")
