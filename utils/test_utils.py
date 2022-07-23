@@ -1,13 +1,14 @@
 '''
 Import necessary libraries
 '''
-
+import os
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import RobustScaler
 from utils.pca_utils import *
+from sklearn.metrics import classification_report, confusion_matrix
 
 '''
 Data preprocessing 
@@ -103,3 +104,67 @@ def kdd_test(V_k, thres_hold):
     print(f"Accuracy score: {accuracy_score * 100.0}")
     print(f"F1 score: {f1_score * 100.0}")
     return accuracy_score*100.0
+
+# Define the score function for abnormal detection which scale abnormal score in range [0:1]
+def anomalyScores_0_1(originalDF, reducedDF):
+  loss = np.sum((np.array(originalDF)-np.array(reducedDF))**2, axis=1)
+  loss = pd.Series(data=loss,index=originalDF.index)
+  loss = (loss-np.min(loss))/(np.max(loss)-np.min(loss))
+  return loss
+
+# Calculate F-Score 
+def results_analysis(df_gt_score, threshold, log=0):
+  df_gt_pred = pd.DataFrame()
+  df_gt_pred['ground_true'] = df_gt_score['ground_true']
+  index = df_gt_score['anomalyScore'] > threshold
+  df_gt_pred['prediction'] = index.astype(int)
+
+  TN, FP, FN, TP = confusion_matrix(df_gt_pred['ground_true'], df_gt_pred['prediction']).ravel()
+  precision_score = TP/(FP + TP)
+  recall_score = TP/(FN + TP)
+  accuracy_score = (TP + TN)/ (TP + FN + TN + FP)
+  f1_score = 2*precision_score*recall_score/(precision_score + recall_score)
+  fpr = FP / (FP+TN) # False positive rate (FPR); False Alarm = FP/N
+
+  if log:
+    print(f"Precision: {np.round(precision_score * 100.0,4)}%")
+    print(f"Recall: {np.round(recall_score * 100.0,4)}%")
+    print(f"Accuracy score: {np.round(accuracy_score * 100.0,4)}%")
+    print(f"F1 score: {np.round(f1_score * 100.0,4)}%")
+    print(f"False alarm: {np.round(fpr * 100.0,4)}%")
+
+  return precision_score, recall_score, accuracy_score, f1_score, fpr
+
+# Test on NSL_KDD_Test+
+def nsl_kdd_test(V_k):
+  # Read data from csv files
+  file_path_train = os.path.join(os.path.abspath(''), "abnormal_detection_data/train/nslkdd_train_normal.csv")
+  file_path_test_normal = os.path.join(os.path.abspath(''), "abnormal_detection_data/test/nslkdd_test_normal.csv")
+  file_path_test_abnormal = os.path.join(os.path.abspath(''), "abnormal_detection_data/test/nslkdd_test_abnormal.csv")
+  df_train = pd.read_csv(file_path_train, index_col = 0)
+  df_test_normal = pd.read_csv(file_path_test_normal, index_col = 0)
+  df_test_abnormal = pd.read_csv(file_path_test_abnormal, index_col = 0)
+  df_train = df_train.drop('outcome', axis=1)
+  df_test_normal = df_test_normal.drop('outcome', axis=1)
+  df_test_abnormal = df_test_abnormal.drop('outcome', axis=1)
+  df_test = pd.concat([df_test_normal, df_test_abnormal])
+  df_test.columns = df_test_abnormal.columns
+
+  # Standardization over Testing
+  scaler = StandardScaler()
+  scaler.fit(df_train)
+  df_test = pd.DataFrame(scaler.transform(df_test))
+  df_test.columns = df_test_abnormal.columns
+  
+  # FedPCA: Obtain dataframe of groundTrue and anomalyScore using V_k
+  df_test_transform = self_pca_transform_with_zero_mean(df_test, V_k)
+  df_test_inverse = self_inverse_transform_with_zero_mean(df_test_transform, V_k)
+  abnormal_score = anomalyScores_0_1(df_test, df_test_inverse)
+  df_gt_score = pd.DataFrame(); df_gt_pred = pd.DataFrame()
+  df_gt_score['ground_true'] = np.concatenate([np.zeros(len(df_test_normal)), np.ones(len(df_test_abnormal))])
+  df_gt_score['anomalyScore'] = abnormal_score
+
+  # Get results analysis
+  precision_score, recall_score, accuracy_score, f1_score, fpr =  results_analysis(df_gt_score, threshold=0.00025, log=1)
+
+  return accuracy_score
