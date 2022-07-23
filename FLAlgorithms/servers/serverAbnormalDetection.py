@@ -5,7 +5,7 @@ from FLAlgorithms.users.userADMM import UserADMM
 from FLAlgorithms.users.userADMM2 import UserADMM2
 from FLAlgorithms.servers.serverbase2 import Server2
 # from utils.model_utils import read_data, read_user_data
-from utils.test_utils import kdd_test
+from utils.test_utils import kdd_test, nsl_kdd_test
 import numpy as np
 import pandas as pd
 import time
@@ -38,11 +38,11 @@ class AbnormalDetection(Server2):
                 U, S, V = torch.svd(train)
                 V = V[:, :dim]
                 # self.commonPCAz = V
-                print("type of V", type(V))
-                print("shape of V: ", V.size())
+                # print("type of V", type(V))
+                # print("shape of V: ", V.size())
                 self.commonPCAz = torch.rand_like(V, dtype=torch.float)
-                print(self.commonPCAz)
-                print(f"Shape of V: {V.shape}")
+                # print(self.commonPCAz)
+                # print(f"Shape of V: {V.shape}")
                 check = torch.matmul(V.T,V)
 
             #user = UserADMM(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
@@ -108,7 +108,10 @@ class AbnormalDetection(Server2):
 
         # Read data from csv file
         client_train = pd.read_csv(client_path)
+        client_train = client_train.sort_values(by=['dst_bytes'])
         client_train = client_train.drop(['Unnamed: 0', 'outcome'], axis=1)
+        print(client_train['dst_bytes'])
+        print("Sorted!!!!!")
 
         return client_train
 
@@ -140,15 +143,14 @@ class AbnormalDetection(Server2):
     '''
     def train(self):
         current_loss = 0
-        prev_loss = 0
         acc_score = 0
         losses_to_file = []
         acc_score_to_file = []
         acc_score_to_file.append(acc_score) # Initialize accuracy as zero
         self.selected_users = self.select_users(1000,1)
-        print("All user in the network: ")
-        for user in self.selected_users:
-            print("user_id: ", user.id)
+        # print("All user in the network: ")
+        # for user in self.selected_users:
+        #     print("user_id: ", user.id)
 
         # Start estimating wall-clock time
         start_time = time.time()
@@ -160,29 +162,23 @@ class AbnormalDetection(Server2):
             self.send_pca()
 
             # Evaluate model each interation
-            prev_loss = current_loss
             current_loss = self.evaluate()
             current_loss = current_loss.item()
             losses_to_file.append(current_loss)
 
+            # Randomly choose a subset of users
             self.selected_users = self.select_users(glob_iter, self.user_fraction)
-            # self.users = self.selected_users 
 
             #NOTE: this is required for the ``fork`` method to work
+            # Train model in each user
             for user in self.selected_users:
                 user.train(self.local_epochs)
-                print(f" selected user for training: {user.id}")
-            # self.users[0].train(self.local_epochs)
+                # print(f" selected user for training: {user.id}")
             self.aggregate_pca()
 
-            # Check loss to early terminate training process
-            # if abs(prev_loss-current_loss) < 1e-2:
-            #     break
-            
             # Evaluate the accuracy score
-            # Extract common representation
             Z = self.commonPCAz.detach().numpy()
-            acc_score = kdd_test(Z, thres_hold=6)
+            acc_score = nsl_kdd_test(Z)
             acc_score_to_file.append(acc_score)
 
         # End estimating wall-clock time
@@ -203,6 +199,7 @@ class AbnormalDetection(Server2):
             space = "Grassman"
         elif self.algorithm == "FedPE":
             space = "Euclidean"
+        
         directory = os.getcwd()
         data_path = os.path.join(directory, "results/KDD")
         acc_path = os.path.join(data_path, "KDD_acc")
@@ -211,12 +208,11 @@ class AbnormalDetection(Server2):
         losses_path = os.path.join(data_path, "KDD_losses")
         losses_file_name = f"{space}_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}"
         losses_file_path = os.path.join(losses_path, losses_file_name)
+
         # Store accuracy score to file
         np.save(acc_file_path, acc_score_to_file)
         np.save(losses_file_path, losses_to_file)
         np.save(f'{space}_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}', Z)
         print(f"training time: {end_time - start_time} seconds")
-        kdd_test(Z, thres_hold=6)
+        nsl_kdd_test(Z)
         print("Completed training!!!")
-        # self.save_results()
-        # self.save_model()
