@@ -10,8 +10,8 @@ Authors: Tung-Anh Nguyen, Jiayu He, Long Tan Le, Nguyen H.Tran
 - The code can be run on any pc.
 ## Instruction to run the code
 <pre></code>
-!python3 main.py --algorithm FedPE --learning_rate 0.0001 --num_global_iters 1000 --dim 9 --subusers 0.1
-!python3 main.py --algorithm FedPG --learning_rate 0.0001 --num_global_iters 1000 --dim 9 --subusers 0.1
+!python3 main.py --algorithm FedPG --learning_rate 0.0001 --num_global_iters 1000 --dim 30 --subusers 0.1 --local_epochs 30
+!python3 main.py --algorithm FedPE --learning_rate 0.0001 --num_global_iters 1000 --dim 30 --subusers 0.1 --local_epochs 30
 <code></pre>
 
 
