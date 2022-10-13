@@ -19,14 +19,17 @@ class UserADMM2():
         self.learning_rate = learning_rate
         self.local_epochs = local_epochs
         self.dim = dim
-        self.train_data = train_data.T
+        # self.train_data = train_data.T # This line is used for Abnormal detection
+        self.train_data = train_data # This line is used for SSA
         self.algorithm = algorithm
         self.localPCA.requires_grad_(True)
 
     def set_commonPCA(self, commonPCA):
-        # update local Y
+        ''' Update local Y: comment this section if we use simplified version of FedPCA where Y^{i+1}=0 after first iteration'''
         self.localZ = commonPCA.data.clone()
         self.localY = self.localY + self.ro * (self.localPCA - self.localZ)
+        ''' Update local Y: because Y^{i+1}=0 after first iteration in FedPCA. This following line can be used for simplified version of FedPCA. Uncomment to use'''
+        # self.localY = torch.zeros_like(self.localY)
         # update local T
         temp = torch.matmul(self.localPCA.T, self.localPCA) - torch.eye(self.localPCA.shape[1])
         hU = torch.max(torch.zeros(temp.shape),temp)**2

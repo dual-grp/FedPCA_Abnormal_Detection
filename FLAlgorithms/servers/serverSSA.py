@@ -1,10 +1,12 @@
 import torch
 import os
+import pandas as pd
 
 from FLAlgorithms.users.userADMM import UserADMM
 from FLAlgorithms.users.userADMM2 import UserADMM2
 from FLAlgorithms.servers.serverbase2 import Server2
 from utils.model_utils import read_data, read_user_data
+from sklearn.preprocessing import StandardScaler
 
 import numpy as np
 from numpy import pi
@@ -12,10 +14,11 @@ from numpy import pi
 # Implementation for FedAvg Server
 
 class ADMM_SSA(Server2):
-    def __init__(self, experiment, device, dataset, learning_rate, ro, num_glob_iters, local_epochs, num_users, dim, time):
+    def __init__(self, algorithm, experiment, device, dataset, learning_rate, ro, num_glob_iters, local_epochs, num_users, dim, time):
         super().__init__(device, dataset, learning_rate, ro, num_glob_iters, local_epochs, num_users, dim, time)
 
         # Initialize data for all  users
+        self.algorithm = algorithm
         self.K = 0
         self.dim = dim
         self.experiment = experiment
@@ -23,11 +26,14 @@ class ADMM_SSA(Server2):
         total_users = len(dataset[0][0])
         print("total users: ", total_users)
         np.random.seed(1993)
-        total_users = 20
+        total_users = 3
         self.num_users = total_users
+        self.store_ids = ['2', '3', '4']
         for i in range(total_users):            
-            id, train , test = read_user_data(i, dataset[0], dataset[1])
-            train = self.generate_synthetic_data()
+            id = i
+            # train = self.generate_synthetic_data()
+            store_id = self.store_ids[i]
+            train = self.get_store_sale_data(store_id)
             train = torch.Tensor(train)
             print(train)
             #train = train# - torch.mean(train, 1)).T
@@ -42,8 +48,7 @@ class ADMM_SSA(Server2):
                 print(self.commonPCAz)
                 check = torch.matmul(U,U.T)
 
-            #user = UserADMM(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
-            user = UserADMM2(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
+            user = UserADMM2(algorithm, device, id, train, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             self.users.append(user)
             self.total_train_samples += user.train_samples
             
@@ -54,19 +59,35 @@ class ADMM_SSA(Server2):
         N = 200 # The number of time 'moments' in our toy series
         t = np.arange(0,N)
         trend = 0.001 * (t - 100)**2
-        p1, p2 = 20, 30
+        p1 = 20
         periodic1 = 2 * np.sin(2*pi*t/p1)
-        periodic2 = 0.75 * np.sin(2*pi*t/p2)
         noise = 2 * (np.random.rand(N) - 0.5)
-        F = trend + periodic1 + periodic2 + noise
-        L = 25 # The window length
+        F = trend + periodic1 + noise
+        L = 20 # The window length
         K = N - L + 1  # number of columns in the trajectory matrix
         X = np.column_stack([F[i:i+L] for i in range(0,K)])
         X.astype(float)
-        # M = np.mean(X, axis=0)
-        # C = X - M
-        return X
+        sX = StandardScaler(copy=True)
+        C = sX.fit_transform(X)
+        return C
 
+    def get_store_sale_data(self, store_id):
+        DATA_PATH = "../../../Semester_3/project/FedSSA/"
+        store_name = f"store{store_id}_salses.csv"
+        file_path = DATA_PATH + store_name
+        store_sale = pd.read_csv(file_path)
+        print(file_path)
+        sales = store_sale['sales'].copy()
+        F = sales.to_numpy()
+        N = F.shape[0]
+        L = 20 # The window length
+        K = N - L + 1  # number of columns in the trajectory matrix
+        X = np.column_stack([F[i:i+L] for i in range(0,K)])
+        X.astype(float)
+        sX = StandardScaler(copy=True)
+        C = sX.fit_transform(X)
+        return C
+        
     def train(self):
         self.selected_users = self.select_users(1000,1)
         print("Selected users: ")
@@ -91,7 +112,7 @@ class ADMM_SSA(Server2):
             # self.users[0].train(self.local_epochs)
             self.aggregate_pca()
         Z = self.commonPCAz.detach().numpy()
-        np.save(f"Grassmann_ADMM_{self.num_users}_L25_d{self.dim}_components_SSA", Z)
+        np.save(f"Grassmann_ADMM_StoreSale_{self.num_users}_L20_d{self.dim}", Z)
         print("Completed training!!!")
         # self.save_results()
         # self.save_model()
