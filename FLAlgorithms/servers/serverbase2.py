@@ -23,7 +23,7 @@ class Server2:
 
     def send_pca(self):
         assert (self.users is not None and len(self.users) > 0)
-        # print("check Z", torch.matmul(self.commonPCAz.T,self.commonPCAz))
+        print("check Z", torch.matmul(self.commonPCAz.T,self.commonPCAz))
         # for user in self.users:
         for user in self.selected_users:
             # print("user_id", user.id)

@@ -24,6 +24,7 @@ class AbnormalDetection(Server2):
         self.experiment = experiment
         dataX = self.get_data_kdd_80000()
         self.num_clients = 20
+        # factor = 80000/self.num_clients
         factor = 67340/self.num_clients
         self.learning_rate = learning_rate
         self.user_fraction = num_users
@@ -100,10 +101,10 @@ class AbnormalDetection(Server2):
 
         # Read data from csv file
         client_train = pd.read_csv(client_path)
-        client_train = client_train.sort_values(by=['dst_bytes']) # Sorting by features to create non.i.i.d data
+        client_train = client_train.sort_values(by=['dst_bytes'])
         client_train = client_train.drop(['Unnamed: 0', 'outcome'], axis=1)
-
-        print("Created Non.i.i.d Data!!!!!")
+        print(client_train['dst_bytes'])
+        print("Sorted!!!!!")
 
         return client_train
 
@@ -134,17 +135,15 @@ class AbnormalDetection(Server2):
     Training model
     '''
     def train(self):
-        # np.random.seed(111)
         current_loss = 0
         acc_score = 0
         losses_to_file = []
         acc_score_to_file = []
-        all_user_train_time = []
         acc_score_to_file.append(acc_score) # Initialize accuracy as zero
         self.selected_users = self.select_users(1000,1)
 
         # Start estimating wall-clock time
-        train_start_time = time.time()
+        start_time = time.time()
         for glob_iter in range(self.num_glob_iters):
             if(self.experiment):
                 self.experiment.set_epoch( glob_iter + 1)
@@ -163,12 +162,7 @@ class AbnormalDetection(Server2):
             #NOTE: this is required for the ``fork`` method to work
             # Train model in each user
             for user in self.selected_users:
-                user_start_time = time.time()
                 user.train(self.local_epochs)
-                user_end_time = time.time()
-                user_train_time  = user_end_time - user_start_time
-                all_user_train_time.append(user_train_time)
-                # print(f"training time for {user.id}: {user_train_time}")
                 # print(f" selected user for training: {user.id}")
             self.aggregate_pca()
 
@@ -178,7 +172,7 @@ class AbnormalDetection(Server2):
             acc_score_to_file.append(acc_score)
 
         # End estimating wall-clock time
-        train_end_time = time.time()
+        end_time = time.time()
 
         # Extract common representation
         Z = self.commonPCAz.detach().numpy()
@@ -204,19 +198,11 @@ class AbnormalDetection(Server2):
         losses_path = os.path.join(data_path, "KDD_losses")
         losses_file_name = f"{space}_losses_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}"
         losses_file_path = os.path.join(losses_path, losses_file_name)
-        model_path = os.path.join(data_path, "KDD_model")
-        model_file_name = f'{space}_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}'
-        model_file_path = os.path.join(model_path, model_file_name)
+
         # Store accuracy score to file
         np.save(acc_file_path, acc_score_to_file)
         np.save(losses_file_path, losses_to_file)
-        np.save(model_file_path, Z)
         np.save(f'{space}_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}', Z)
-        print(f"training time: {train_end_time - train_start_time} seconds")
-        avg_user_train_time = sum(all_user_train_time)/(self.num_glob_iters * int(self.user_fraction * self.num_clients))
-        print(f"Average training time for each client: {avg_user_train_time}")
-        test_start_time = time.time()
+        print(f"training time: {end_time - start_time} seconds")
         nsl_kdd_test(Z)
-        test_end_time = time.time()
-        print(f"Prediction time: {test_end_time - test_start_time}")
         print("Completed training!!!")

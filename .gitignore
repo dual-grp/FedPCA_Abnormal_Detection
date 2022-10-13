@@ -2,4 +2,3 @@ data/
 *.npy
 desktop.ini
 *.pyc
-*.cpython-37.pyc
