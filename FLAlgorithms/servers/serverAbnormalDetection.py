@@ -36,16 +36,9 @@ class AbnormalDetection(Server2):
             if(i == 0):
                 U, S, V = torch.svd(train)
                 V = V[:, :dim]
-                # self.commonPCAz = V
-                # print("type of V", type(V))
-                # print("shape of V: ", V.size())
                 self.commonPCAz = torch.rand_like(V, dtype=torch.float)
-                # print(self.commonPCAz)
-                # print(f"Shape of V: {V.shape}")
                 check = torch.matmul(V.T,V)
 
-            #user = UserADMM(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
-            # user = UserADMM2(device, id, train, test, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             user = UserADMM2(algorithm, device, id, train, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             self.users.append(user)
             self.total_train_samples += user.train_samples
@@ -149,9 +142,6 @@ class AbnormalDetection(Server2):
         all_user_train_time = []
         acc_score_to_file.append(acc_score) # Initialize accuracy as zero
         self.selected_users = self.select_users(1000,1)
-        # print("All user in the network: ")
-        # for user in self.selected_users:
-        #     print("user_id: ", user.id)
 
         # Start estimating wall-clock time
         train_start_time = time.time()

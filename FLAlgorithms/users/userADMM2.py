@@ -19,8 +19,7 @@ class UserADMM2():
         self.learning_rate = learning_rate
         self.local_epochs = local_epochs
         self.dim = dim
-        # self.train_data = train_data.T # This line is used for Abnormal detection
-        self.train_data = train_data # This line is used for SSA
+        self.train_data = train_data.T # This line is used for Abnormal detection
         self.algorithm = algorithm
         self.localPCA.requires_grad_(True)
 
