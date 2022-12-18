@@ -19,7 +19,7 @@ class UserADMM2():
         self.learning_rate = learning_rate
         self.local_epochs = local_epochs
         self.dim = dim
-        self.train_data = train_data.T # This line is used for Abnormal detection
+        self.train_data = train_data.T # Since we learn data representation in a lower dimension, the data is convert from [Nxd] to [dxN]. Then, d is reduced to k by FedPG and FedPE
         self.algorithm = algorithm
         self.localPCA.requires_grad_(True)
 
