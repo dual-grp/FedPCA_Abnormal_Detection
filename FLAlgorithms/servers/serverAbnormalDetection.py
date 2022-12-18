@@ -20,14 +20,13 @@ class AbnormalDetection(Server2):
         # Initialize data for all  users
         self.algorithm = algorithm
         self.local_epochs = local_epochs
-        self.K = 0
+        # self.K = 0
         self.experiment = experiment
-        dataX = self.get_data_kdd_80000()
+        dataX = self.get_data_snl_kdd()
         self.num_clients = 20
-        # factor = 80000/self.num_clients
-        factor = 67340/self.num_clients
+        factor = 67340/self.num_clients # 67340 is total number of data points in NSL KDD dataset
         self.learning_rate = learning_rate
-        self.user_fraction = num_users
+        self.user_fraction = num_users # percentage of total user involed in each global training round
         total_users = self.num_clients
         print("total users: ", total_users)
         for i in range(self.num_clients):            
@@ -35,10 +34,9 @@ class AbnormalDetection(Server2):
             train = self.get_client_data(dataX, factor=factor, i=i)
             train = torch.Tensor(train)
             if(i == 0):
-                U, S, V = torch.svd(train)
+                U, S, V = torch.svd(train) # This line of code is just to get the dimension of U matrix in the paper
                 V = V[:, :dim]
-                self.commonPCAz = torch.rand_like(V, dtype=torch.float)
-                check = torch.matmul(V.T,V)
+                self.commonPCAz = torch.rand_like(V, dtype=torch.float) # the matrix U is randomized in the server
 
             user = UserADMM2(algorithm, device, id, train, self.commonPCAz, learning_rate, ro, local_epochs, dim)
             self.users.append(user)
@@ -68,7 +66,7 @@ class AbnormalDetection(Server2):
         return client_train
 
     '''
-    Get data from kdd dataset csv file
+    Get data from kdd dataset (.csv file)
     '''
     def get_data_kdd(self, i):
         # Get data path
@@ -87,9 +85,9 @@ class AbnormalDetection(Server2):
         return client_train
     
     '''
-    Get 80000 data from kdd dataset csv file
+    Get data from nsl kdd dataset (.csv file)
     '''
-    def get_data_kdd_80000(self):
+    def get_data_snl_kdd(self):
         # Get data path
         directory = os.getcwd()
         print(f"directory: {directory}")
@@ -99,7 +97,7 @@ class AbnormalDetection(Server2):
         client_path = os.path.join(data_path, file_name)
         print(client_path)
 
-        # Read data from csv file
+        # Read data from csv file and create non-i.i.d data for each client
         client_train = pd.read_csv(client_path)
         client_train = client_train.sort_values(by=['dst_bytes'])
         client_train = client_train.drop(['Unnamed: 0', 'outcome'], axis=1)
@@ -140,7 +138,7 @@ class AbnormalDetection(Server2):
         losses_to_file = []
         acc_score_to_file = []
         acc_score_to_file.append(acc_score) # Initialize accuracy as zero
-        self.selected_users = self.select_users(1000,1)
+        self.selected_users = self.select_users(1000,1) # (1) Select all user in the network and distribute model to estimate performance in the first round (*)
 
         # Start estimating wall-clock time
         start_time = time.time()
@@ -152,7 +150,7 @@ class AbnormalDetection(Server2):
             self.send_pca()
 
             # Evaluate model each interation
-            current_loss = self.evaluate()
+            current_loss = self.evaluate() # (*) The loss is estimated before training which requires (1)
             current_loss = current_loss.item()
             losses_to_file.append(current_loss)
 
@@ -202,7 +200,9 @@ class AbnormalDetection(Server2):
         # Store accuracy score to file
         np.save(acc_file_path, acc_score_to_file)
         np.save(losses_file_path, losses_to_file)
-        np.save(f'{space}_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}', Z)
+        # np.save(f'{space}_Abnormaldetection_KDD_dim_{self.dim}_std_client_{self.num_clients}_iter_{self.num_glob_iters}_lr_{self.learning_rate}_sub_{self.user_fraction}_localEpochs_{self.local_epochs}', Z)
+        print(f"------------Final Test results------------")
         print(f"training time: {end_time - start_time} seconds")
         nsl_kdd_test(Z)
         print("Completed training!!!")
+        print(f"------------------------------------------")
