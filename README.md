@@ -1,5 +1,5 @@
 # Fed PCA: Federated Learning Principal Component Analysis
-This repository is for the Experiment Section of the paper: "Fed PCA: Federated Learning Principal Component Analysis"
+This repository is for the Experiment Section of the paper: "Federated PCA on Grassmann Manifold for Anomaly Detection in IoT Networks"
 
 Authors: Tung-Anh Nguyen, Jiayu He, Long Tan Le, Nguyen H.Tran
 # Software requirements:
@@ -16,5 +16,4 @@ Authors: Tung-Anh Nguyen, Jiayu He, Long Tan Le, Nguyen H.Tran
 
 
 ## Dataset:
-
 NSL-KDD
