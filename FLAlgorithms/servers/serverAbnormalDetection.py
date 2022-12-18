@@ -157,7 +157,6 @@ class AbnormalDetection(Server2):
             # Randomly choose a subset of users
             self.selected_users = self.select_users(glob_iter, self.user_fraction)
 
-            #NOTE: this is required for the ``fork`` method to work
             # Train model in each user
             for user in self.selected_users:
                 user.train(self.local_epochs)
