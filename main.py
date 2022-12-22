@@ -7,8 +7,6 @@ import argparse
 import importlib
 import random
 import os
-from FLAlgorithms.servers.serverADMM import ADMM
-from FLAlgorithms.servers.serverSSA import ADMM_SSA
 from FLAlgorithms.servers.serverAbnormalDetection import AbnormalDetection
 from utils.model_utils import read_data
 from FLAlgorithms.trainmodel.models import *
