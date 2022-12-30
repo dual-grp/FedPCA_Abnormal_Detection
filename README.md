@@ -2,7 +2,9 @@
 This repository is for the Experiment Section of the paper: "Federated PCA on Grassmann Manifold for Anomaly Detection in IoT Networks"
 
 Authors: Tung-Anh Nguyen, Jiayu He, Long Tan Le, Nguyen H.Tran
+
 Paper link: https://arxiv.org/pdf/2212.12121.pdf 
+
 # Software requirements:
 - numpy, scipy, pytorch, Pillow, matplotlib.
 
