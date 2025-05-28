@@ -28,3 +28,16 @@ Paper link: https://arxiv.org/pdf/2212.12121.pdf
 
 ## Dataset:
 NSL-KDD
+
+# Citation
+If you find this repo useful, please cite our work.
+<pre></code>
+@inproceedings{nguyen2023federated,
+  title={Federated PCA on Grassmann manifold for anomaly detection in IoT networks},
+  author={Nguyen, Tung-Anh and He, Jiayu and Le, Long Tan and Bao, Wei and Tran, Nguyen H},
+  booktitle={IEEE INFOCOM 2023-IEEE Conference on Computer Communications},
+  pages={1--10},
+  year={2023},
+  organization={IEEE}
+}
+<code></pre>
